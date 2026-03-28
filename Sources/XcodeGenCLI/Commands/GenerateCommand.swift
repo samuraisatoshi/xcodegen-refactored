@@ -26,6 +26,10 @@ class GenerateCommand: ProjectCommand {
                    shortDescription: "Generate an Xcode project from a spec")
     }
 
+    override func guideContent(locale: GuideLocale) -> CommandGuide {
+        GenerateGuide.content(locale: locale)
+    }
+
     override func execute(specLoader: SpecLoader, projectSpecPath: Path, project: Project) throws {
 
         let projectDirectory = self.projectDirectory?.absolute() ?? projectSpecPath.parent()

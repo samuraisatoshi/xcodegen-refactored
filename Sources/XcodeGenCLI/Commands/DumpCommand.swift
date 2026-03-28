@@ -20,6 +20,10 @@ class DumpCommand: ProjectCommand {
                    shortDescription: "Dumps the resolved project spec to stdout or a file")
     }
 
+    override func guideContent(locale: GuideLocale) -> CommandGuide {
+        DumpGuide.content(locale: locale)
+    }
+
     override func execute(specLoader: SpecLoader, projectSpecPath: Path, project: Project) throws {
         let type = dumpType ?? .defaultValue
 

@@ -17,6 +17,10 @@ class CacheCommand: ProjectCommand {
                    shortDescription: "Write the project cache")
     }
 
+    override func guideContent(locale: GuideLocale) -> CommandGuide {
+        CacheGuide.content(locale: locale)
+    }
+
     override func execute(specLoader: SpecLoader, projectSpecPath: Path, project: Project) throws {
 
         let cacheFilePath = self.cacheFilePath ?? Path("~/.xcodegen/cache/\(projectSpecPath.absolute().string.md5)").absolute()

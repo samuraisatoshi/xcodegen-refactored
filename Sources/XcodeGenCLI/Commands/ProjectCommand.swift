@@ -14,7 +14,7 @@ class ProjectCommand: Command {
 
     @Flag("-q", "--quiet", description: "Suppress all informational and success output")
     var quiet: Bool
-    
+
     @Key("-s", "--spec", description: "The path to the project spec file. Defaults to project.yml. (It is also possible to link to multiple spec files by comma separating them. Note that all other flags will be the same.)")
     var spec: String?
 
@@ -24,6 +24,27 @@ class ProjectCommand: Command {
     @Flag("-n", "--no-env", description: "Disable environment variable expansions")
     var disableEnvExpansion: Bool
 
+    @Flag("--guide", description: "Print structured JSON guidance for this command (for LLM agents and MCP servers) and exit.")
+    var guide: Bool
+
+    @Key("--lang", description: "Language for --guide output. One of: en, pt-br, es. Defaults to the LANG environment variable.")
+    var lang: String?
+
+    /// Override in subclasses to provide command-specific guide content.
+    func guideContent(locale: GuideLocale) -> CommandGuide {
+        CommandGuide(
+            command: name,
+            purpose: shortDescription,
+            agentSummary: shortDescription,
+            whenToUse: [],
+            workflow: [],
+            parameters: [],
+            examples: [],
+            commonErrors: [],
+            relatedCommands: []
+        )
+    }
+
     init(version: Version, name: String, shortDescription: String) {
         self.version = version
         self.name = name
@@ -31,7 +52,13 @@ class ProjectCommand: Command {
     }
 
     func execute() throws {
-        
+        if guide {
+            let locale = GuideLocale.resolve(lang)
+            let json = try guideContent(locale: locale).jsonString()
+            stdout.print(json)
+            return
+        }
+
         var projectSpecs: [Path] = []
         if let spec = spec {
             projectSpecs = spec.components(separatedBy: ",").map { Path($0).absolute() }
