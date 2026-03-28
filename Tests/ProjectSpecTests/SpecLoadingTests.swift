@@ -383,6 +383,61 @@ class SpecLoadingTests: XCTestCase {
         }
     }
 
+    func testSpecLoaderIncludePathValidation() {
+        describe {
+            var projectDir: Path!
+            var outsideDir: Path!
+
+            $0.before {
+                projectDir = Path(components: [NSTemporaryDirectory(), NSUUID().uuidString])
+                outsideDir = Path(components: [NSTemporaryDirectory(), NSUUID().uuidString])
+                try? projectDir.mkpath()
+                try? outsideDir.mkpath()
+            }
+            $0.after {
+                try? projectDir.delete()
+                try? outsideDir.delete()
+            }
+
+            $0.it("throws when validateIncludePaths is true and include is outside project dir") {
+                let includedContent: [String: Any] = ["name": "Included"]
+                let outsidePath = outsideDir + "outside.yml"
+                try Yams.dump(object: includedContent).write(toFile: outsidePath.string, atomically: true, encoding: .utf8)
+
+                let mainContent: [String: Any] = [
+                    "name": "Main",
+                    "options": ["validateIncludePaths": true],
+                    "include": [outsidePath.string],
+                ]
+                let mainPath = projectDir + "project.yml"
+                try Yams.dump(object: mainContent).write(toFile: mainPath.string, atomically: true, encoding: .utf8)
+
+                do {
+                    _ = try SpecFile(path: mainPath)
+                    throw failure("Expected SpecValidationError but no error was thrown")
+                } catch let error as SpecValidationError {
+                    try expect(error.errors.contains(.includedFileOutsideProjectDirectory(path: outsidePath.string))) == true
+                }
+            }
+
+            $0.it("loads successfully when validateIncludePaths is false and include is outside project dir") {
+                let includedContent: [String: Any] = ["name": "Included"]
+                let outsidePath = outsideDir + "outside.yml"
+                try Yams.dump(object: includedContent).write(toFile: outsidePath.string, atomically: true, encoding: .utf8)
+
+                let mainContent: [String: Any] = [
+                    "name": "Main",
+                    "options": ["validateIncludePaths": false],
+                    "include": [outsidePath.string],
+                ]
+                let mainPath = projectDir + "project.yml"
+                try Yams.dump(object: mainContent).write(toFile: mainPath.string, atomically: true, encoding: .utf8)
+
+                _ = try SpecFile(path: mainPath)
+            }
+        }
+    }
+
     func testProjectSpecParser() {
         let validTarget: [String: Any] = ["type": "application", "platform": "iOS"]
         let validBreakpoint: [String: Any] = ["type": "Exception", "scope": "All", "stopOnStyle": "Catch"]
