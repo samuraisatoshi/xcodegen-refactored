@@ -11,11 +11,11 @@ public class PBXProjGenerator {
 
     let pbxProj: PBXProj
     let projectDirectory: Path?
-    let carthageResolver: CarthageDependencyResolver
+    let carthageResolver: CarthageResolving
 
     public static let copyFilesActionMask: UInt = 8
 
-    var sourceGenerator: SourceGenerator!
+    let sourceGenerator: SourceGenerator
 
     var targetObjects: [String: PBXTarget] = [:]
     var targetAggregateObjects: [String: PBXAggregateTarget] = [:]
@@ -32,11 +32,11 @@ public class PBXProjGenerator {
 
     private var projects: [ProjectReference: PBXProj] = [:]
 
-    public init(project: Project, projectDirectory: Path? = nil) {
+    public init(project: Project, projectDirectory: Path? = nil, carthageResolver: CarthageResolving? = nil) {
         self.project = project
-        carthageResolver = CarthageDependencyResolver(project: project)
         pbxProj = PBXProj(rootObject: nil, objectVersion: project.objectVersion)
         self.projectDirectory = projectDirectory
+        self.carthageResolver = carthageResolver ?? CarthageDependencyResolver(project: project)
         sourceGenerator = SourceGenerator(project: project,
                                           pbxProj: pbxProj,
                                           projectDirectory: projectDirectory)

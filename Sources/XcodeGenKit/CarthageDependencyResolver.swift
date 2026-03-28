@@ -14,20 +14,20 @@ public struct ResolvedCarthageDependency: Equatable, Hashable {
     let isFromTopLevelTarget: Bool
 }
 
-public class CarthageDependencyResolver {
+public class CarthageDependencyResolver: CarthageResolving {
     static func getBuildPath(_ project: Project) -> String {
         return project.options.carthageBuildPath ?? "Carthage/Build"
     }
 
     /// Carthage's base build path as specified by the
     /// project's `SpecOptions`, or `Carthage/Build` by default
-    var buildPath: String {
+    public var buildPath: String {
         return CarthageDependencyResolver.getBuildPath(project)
     }
 
     /// Carthage's executable path as specified by the
     /// project's `SpecOptions`, or `carthage` by default
-    var executable: String {
+    public var executable: String {
         project.options.carthageExecutablePath ?? "carthage"
     }
 
@@ -40,7 +40,7 @@ public class CarthageDependencyResolver {
     }
 
     /// Carthage's build path for the given platform
-    func buildPath(for platform: Platform, linkType: Dependency.CarthageLinkType) -> String {
+    public func buildPath(for platform: Platform, linkType: Dependency.CarthageLinkType) -> String {
         switch linkType {
         case .static:
             return "\(buildPath)/\(platform.carthageName)/Static"
@@ -50,7 +50,7 @@ public class CarthageDependencyResolver {
     }
 
     /// Fetches all carthage dependencies for a given target
-    func dependencies(for topLevelTarget: Target) -> [ResolvedCarthageDependency] {
+    public func dependencies(for topLevelTarget: Target) -> [ResolvedCarthageDependency] {
         // this is used to resolve cyclical target dependencies
         var visitedTargets: Set<String> = []
         var frameworks: Set<ResolvedCarthageDependency> = []
@@ -125,7 +125,7 @@ public class CarthageDependencyResolver {
 
     /// Reads the .version file generated for a given Carthage dependency
     /// and returns a list of its related dependencies including self
-    func relatedDependencies(for dependency: Dependency, in platform: Platform) -> [Dependency] {
+    public func relatedDependencies(for dependency: Dependency, in platform: Platform) -> [Dependency] {
         guard
             case .carthage = dependency.type,
             let versionFile = try? versionLoader.getVersionFile(for: dependency.reference) else {
