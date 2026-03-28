@@ -65,16 +65,17 @@ class PatchCommand: ProjectCommand {
         }
 
         // Apply the patch to the dictionary
+        let patcher = XcodeSpecPatcher()
         switch operation {
         case .addSource:
             guard let path = sourcePath else { throw PatchError.missingParam("--path") }
-            dict = try applyAddSource(to: dict, target: targetName, path: path)
+            dict = try patcher.addSource(to: dict, target: targetName, path: path)
 
         case .addDependency:
             if let sdk = sdkName {
-                dict = try applyAddSDKDependency(to: dict, target: targetName, sdk: sdk)
+                dict = try patcher.addSDKDependency(to: dict, target: targetName, sdk: sdk)
             } else if let pkg = packageName {
-                dict = try applyAddPackageDependency(to: dict, target: targetName, package: pkg)
+                dict = try patcher.addPackageDependency(to: dict, target: targetName, package: pkg)
             } else {
                 throw PatchError.missingParam("--sdk or --package")
             }
@@ -82,7 +83,7 @@ class PatchCommand: ProjectCommand {
         case .setSetting:
             guard let key = settingKey else { throw PatchError.missingParam("--key") }
             guard let value = settingValue else { throw PatchError.missingParam("--value") }
-            dict = try applySetSetting(to: dict, target: targetName, key: key, value: value, config: configName)
+            dict = try patcher.setSetting(in: dict, target: targetName, key: key, value: value, config: configName)
         }
 
         // Serialize back to YAML (note: comments and key order are not preserved — documented trade-off)
@@ -121,89 +122,6 @@ class PatchCommand: ProjectCommand {
         success("Created project at \(projectPath)")
     }
 
-    // MARK: - Patch helpers
-
-    private func applyAddSource(to dict: [String: Any], target: String, path: String) throws -> [String: Any] {
-        var dict = dict
-        guard var targets = dict["targets"] as? [String: Any],
-              var targetDict = targets[target] as? [String: Any] else {
-            throw PatchError.cannotMutate(target)
-        }
-
-        var sources = targetDict["sources"] as? [Any] ?? []
-        // Avoid duplicates
-        let existing = sources.compactMap { ($0 as? String) ?? ($0 as? [String: Any])?["path"] as? String }
-        guard !existing.contains(path) else { return dict }
-
-        sources.append(path)
-        targetDict["sources"] = sources
-        targets[target] = targetDict
-        dict["targets"] = targets
-        return dict
-    }
-
-    private func applyAddSDKDependency(to dict: [String: Any], target: String, sdk: String) throws -> [String: Any] {
-        var dict = dict
-        guard var targets = dict["targets"] as? [String: Any],
-              var targetDict = targets[target] as? [String: Any] else {
-            throw PatchError.cannotMutate(target)
-        }
-
-        var deps = targetDict["dependencies"] as? [[String: Any]] ?? []
-        let existing = deps.compactMap { $0["sdk"] as? String }
-        guard !existing.contains(sdk) else { return dict }
-
-        deps.append(["sdk": sdk])
-        targetDict["dependencies"] = deps
-        targets[target] = targetDict
-        dict["targets"] = targets
-        return dict
-    }
-
-    private func applyAddPackageDependency(to dict: [String: Any], target: String, package: String) throws -> [String: Any] {
-        var dict = dict
-        guard var targets = dict["targets"] as? [String: Any],
-              var targetDict = targets[target] as? [String: Any] else {
-            throw PatchError.cannotMutate(target)
-        }
-
-        var deps = targetDict["dependencies"] as? [[String: Any]] ?? []
-        let existing = deps.compactMap { $0["package"] as? String }
-        guard !existing.contains(package) else { return dict }
-
-        deps.append(["package": package])
-        targetDict["dependencies"] = deps
-        targets[target] = targetDict
-        dict["targets"] = targets
-        return dict
-    }
-
-    private func applySetSetting(to dict: [String: Any], target: String, key: String, value: String, config: String?) throws -> [String: Any] {
-        var dict = dict
-        guard var targets = dict["targets"] as? [String: Any],
-              var targetDict = targets[target] as? [String: Any] else {
-            throw PatchError.cannotMutate(target)
-        }
-
-        var settings = targetDict["settings"] as? [String: Any] ?? [:]
-
-        if let config = config {
-            var configs = settings["configs"] as? [String: Any] ?? [:]
-            var configSettings = configs[config] as? [String: Any] ?? [:]
-            configSettings[key] = value
-            configs[config] = configSettings
-            settings["configs"] = configs
-        } else {
-            var base = settings["base"] as? [String: Any] ?? [:]
-            base[key] = value
-            settings["base"] = base
-        }
-
-        targetDict["settings"] = settings
-        targets[target] = targetDict
-        dict["targets"] = targets
-        return dict
-    }
 }
 
 // MARK: - Operation enum
@@ -222,7 +140,6 @@ private enum PatchError: Error, CustomStringConvertible, ProcessError {
     case missingDictionary
     case targetNotFound(String)
     case missingParam(String)
-    case cannotMutate(String)
 
     var description: String {
         switch self {
@@ -231,7 +148,6 @@ private enum PatchError: Error, CustomStringConvertible, ProcessError {
         case .missingDictionary:       return #"{"error":"could not load project dictionary"}"#
         case let .targetNotFound(n):   return #"{"error":"target '\#(n)' not found"}"#
         case let .missingParam(p):     return #"{"error":"missing required parameter: \#(p)"}"#
-        case let .cannotMutate(t):     return #"{"error":"cannot locate target '\#(t)' in YAML structure"}"#
         }
     }
 
