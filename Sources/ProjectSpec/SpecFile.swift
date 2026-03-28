@@ -92,10 +92,20 @@ public struct SpecFile {
 
         let jsonDictionary = try SpecFile.loadDictionary(path: path).expand(variables: variables)
 
+        let validateIncludePaths = (jsonDictionary["options"] as? JSONDictionary)?["validateIncludePaths"] as? Bool ?? false
+
         let includes = Include.parse(json: jsonDictionary["include"])
         let subSpecs: [SpecFile] = try includes
             .filter(\.enable)
             .map { include in
+                if validateIncludePaths {
+                    let resolvedPath = (basePath + include.path).normalize()
+                    let normalizedBase = basePath.normalize()
+                    if let relative = try? resolvedPath.relativePath(from: normalizedBase),
+                       relative.string.hasPrefix("..") {
+                        throw SpecValidationError(errors: [.includedFileOutsideProjectDirectory(path: include.path.string)])
+                    }
+                }
                 return try SpecFile(include: include, basePath: basePath, relativePath: relativePath, cachedSpecFiles: &cachedSpecFiles, variables: variables)
             }
 
