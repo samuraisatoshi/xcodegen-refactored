@@ -32,6 +32,15 @@ class SourceGenerator {
 
     private(set) var knownRegions: Set<String> = []
 
+    /// Compiled regex cache for destination path inference — built once per process lifetime.
+    /// Key: SupportedDestination; Value: (directory pattern, filename suffix pattern).
+    private static let destinationRegexCache: [SupportedDestination: (NSRegularExpression?, NSRegularExpression?)] =
+        Dictionary(uniqueKeysWithValues: SupportedDestination.allCases.map { destination in
+            let regex1 = try? NSRegularExpression(pattern: "\\/\(destination)\\/", options: .caseInsensitive)
+            let regex2 = try? NSRegularExpression(pattern: "\\_\(destination)\\.swift$", options: .caseInsensitive)
+            return (destination, (regex1, regex2))
+        })
+
     /// The effective base path for resolving group and file paths in the generated project.
     /// Uses `projectDirectory` when the xcodeproj is generated in a different location than the spec.
     private var basePath: Path {
@@ -114,12 +123,10 @@ class SourceGenerator {
         if let filters = filters, !filters.isEmpty {
             return filters.map { $0.string }
         } else if inferDestinationFiltersByPath == true {
-            for supportedDestination in SupportedDestination.allCases {
-                let regex1 = try? NSRegularExpression(pattern: "\\/\(supportedDestination)\\/", options: .caseInsensitive)
-                let regex2 = try? NSRegularExpression(pattern: "\\_\(supportedDestination)\\.swift$", options: .caseInsensitive)
-                
+            for destination in SupportedDestination.allCases {
+                guard let (regex1, regex2) = SourceGenerator.destinationRegexCache[destination] else { continue }
                 if regex1?.isMatch(to: path.string) == true || regex2?.isMatch(to: path.string) == true {
-                    return [supportedDestination.string]
+                    return [destination.string]
                 }
             }
         }
