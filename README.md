@@ -277,7 +277,21 @@ Inspiration for this tool came from:
 - [CocoaPods Xcodeproj](https://github.com/CocoaPods/Xcodeproj)
 
 ## Contributions
-Pull requests and issues are always welcome. Please open any issues and PRs for bugs, features, or documentation.
+
+### Contributing to this fork
+
+Issues and pull requests related to the refactoring work (new commands, output formats, SOLID/DDD changes) are welcome at **[samuraisatoshi/xcodegen-refactored](https://github.com/samuraisatoshi/xcodegen-refactored/issues)**.
+
+Before opening a PR:
+
+1. Fork [samuraisatoshi/xcodegen-refactored](https://github.com/samuraisatoshi/xcodegen-refactored)
+2. Create a feature branch from `master`
+3. Run `swift test` — all 110 tests must pass
+4. Open a PR with a clear description of what changed and why
+
+### Contributing to the original project
+
+Bugs and features unrelated to this fork's changes should be reported upstream at **[yonaskolb/XcodeGen](https://github.com/yonaskolb/XcodeGen/issues)**.
 
 [![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/0)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/0)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/1)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/1)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/2)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/2)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/3)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/3)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/4)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/4)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/5)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/5)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/6)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/6)[![](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/images/7)](https://sourcerer.io/fame/yonaskolb/yonaskolb/XcodeGen/links/7)
 
