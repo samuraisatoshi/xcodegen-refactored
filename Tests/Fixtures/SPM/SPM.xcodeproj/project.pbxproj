@@ -75,11 +75,11 @@
 		464ACF8D8F2D9F219BCFD3E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4E22B8BCC18A29EFE1DE3BE4 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		61C17B77601A9D1B7895AB42 /* StaticLibrary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaticLibrary.swift; sourceTree = "<group>"; };
+		72EEB41C0E205F1266A21151 /* xcodegen */ = {isa = PBXFileReference; lastKnownFileType = folder; name = xcodegen; path = ../../..; sourceTree = SOURCE_ROOT; };
 		7970A2253B14A9B27C307FAC /* SPMTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SPMTests.swift; sourceTree = "<group>"; };
 		979AE1767E2AF6B3B9D7F13D /* FooFeature */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FooFeature; path = FooFeature; sourceTree = SOURCE_ROOT; };
 		A9601593D0AD02931266A4E5 /* App.xctestplan */ = {isa = PBXFileReference; path = App.xctestplan; sourceTree = "<group>"; };
 		CAB5625F6FEA668410ED5482 /* libStaticLibrary.a */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = archive.ar; path = libStaticLibrary.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		ED284AB7C13DCC0A95DAA680 /* XcodeGen */ = {isa = PBXFileReference; lastKnownFileType = folder; name = XcodeGen; path = ../../..; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,7 +107,7 @@
 				26F7EFEE613987D1E1258A60 /* AppDelegate.swift */,
 				4E22B8BCC18A29EFE1DE3BE4 /* Assets.xcassets */,
 				464ACF8D8F2D9F219BCFD3E7 /* Info.plist */,
-				ED284AB7C13DCC0A95DAA680 /* XcodeGen */,
+				72EEB41C0E205F1266A21151 /* xcodegen */,
 			);
 			path = SPM;
 			sourceTree = "<group>";
