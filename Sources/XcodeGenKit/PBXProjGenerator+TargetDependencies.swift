@@ -1,9 +1,115 @@
 import Foundation
 import PathKit
 import ProjectSpec
+import Version
 import XcodeProj
 
 extension PBXProjGenerator {
+
+    // MARK: - Target dependency objects
+
+    func generateTargetDependency(from: String, to target: String, platform: String?, platforms: [String]?) -> PBXTargetDependency {
+        guard let targetObject = targetObjects[target] ?? targetAggregateObjects[target] else {
+            fatalError("Target dependency not found: from ( \(from) ) to ( \(target) )")
+        }
+        let targetProxy = addObject(PBXContainerItemProxy(
+            containerPortal: .project(pbxProj.rootObject!),
+            remoteGlobalID: .object(targetObject),
+            proxyType: .nativeTarget,
+            remoteInfo: target
+        ))
+        return addObject(PBXTargetDependency(
+            platformFilter: platform,
+            platformFilters: platforms,
+            target: targetObject,
+            targetProxy: targetProxy
+        ))
+    }
+
+    func generateExternalTargetDependency(from: String, to target: String, in project: String, platform: Platform) throws -> (PBXTargetDependency, Target, PBXReferenceProxy) {
+        guard let projectReference = self.project.getProjectReference(project) else {
+            fatalError("project '\(project)' not found")
+        }
+        let pbxProj = try getPBXProj(from: projectReference)
+        guard let targetObject = pbxProj.targets(named: target).first else {
+            fatalError("target '\(target)' not found in project '\(project)'")
+        }
+        let projectFileReferenceIndex = self.pbxProj.rootObject!
+            .projects
+            .map { $0["ProjectRef"] as? PBXFileReference }
+            .firstIndex { $0?.path == Path(projectReference.path).normalize().string }
+        guard let index = projectFileReferenceIndex,
+            let projectFileReference = self.pbxProj.rootObject?.projects[index]["ProjectRef"] as? PBXFileReference,
+            let productsGroup = self.pbxProj.rootObject?.projects[index]["ProductGroup"] as? PBXGroup else {
+            fatalError("Missing subproject file reference")
+        }
+        let targetProxy = addObject(PBXContainerItemProxy(
+            containerPortal: .fileReference(projectFileReference),
+            remoteGlobalID: .object(targetObject),
+            proxyType: .nativeTarget,
+            remoteInfo: target
+        ))
+        let productProxy = PBXContainerItemProxy(
+            containerPortal: .fileReference(projectFileReference),
+            remoteGlobalID: targetObject.product.flatMap(PBXContainerItemProxy.RemoteGlobalID.object),
+            proxyType: .reference,
+            remoteInfo: target
+        )
+        var path = targetObject.productNameWithExtension()
+        if targetObject.productType == .staticLibrary, let tmpPath = path, !tmpPath.hasPrefix("lib") {
+            path = "lib\(tmpPath)"
+        }
+        let productReferenceProxyFileType = targetObject.productNameWithExtension()
+            .flatMap { Xcode.fileType(path: Path($0)) }
+        let existingValue = self.pbxProj.referenceProxies.first { referenceProxy in
+            referenceProxy.path == path &&
+            referenceProxy.remote == productProxy &&
+            referenceProxy.sourceTree == .buildProductsDir &&
+            referenceProxy.fileType == productReferenceProxyFileType
+        }
+        let productReferenceProxy: PBXReferenceProxy
+        if let existingValue = existingValue {
+            productReferenceProxy = existingValue
+        } else {
+            addObject(productProxy)
+            productReferenceProxy = addObject(PBXReferenceProxy(
+                fileType: productReferenceProxyFileType,
+                path: path,
+                remote: productProxy,
+                sourceTree: .buildProductsDir
+            ))
+            productsGroup.children.append(productReferenceProxy)
+        }
+        let targetDependency = addObject(PBXTargetDependency(name: targetObject.name, targetProxy: targetProxy))
+        guard let buildConfigurations = targetObject.buildConfigurationList?.buildConfigurations,
+            let defaultConfigurationName = targetObject.buildConfigurationList?.defaultConfigurationName,
+            let defaultConfiguration = buildConfigurations.first(where: { $0.name == defaultConfigurationName }) ?? buildConfigurations.first else {
+            fatalError("Missing target info")
+        }
+        let productType: PBXProductType = targetObject.productType ?? .none
+        let buildSettings = defaultConfiguration.buildSettings
+        let settings = Settings(buildSettings: buildSettings, configSettings: [:], groups: [])
+        let deploymentTargetString = buildSettings[platform.deploymentTargetSetting]?.stringValue
+        let deploymentTarget = deploymentTargetString == nil ? nil : try Version.parse(deploymentTargetString!)
+        let requiresObjCLinking = buildSettings["OTHER_LDFLAGS"]?.stringValue?.contains("-ObjC") ?? (productType == .staticLibrary)
+        let dependencyTarget = Target(
+            name: targetObject.name,
+            type: productType,
+            platform: platform,
+            productName: targetObject.productName,
+            deploymentTarget: deploymentTarget,
+            settings: settings,
+            requiresObjCLinking: requiresObjCLinking
+        )
+        return (targetDependency, dependencyTarget, productReferenceProxy)
+    }
+
+    func getPBXProj(from reference: ProjectReference) throws -> PBXProj {
+        if let cachedProject = projects[reference] { return cachedProject }
+        let pbxproj = try XcodeProj(pathString: (project.basePath + Path(reference.path).normalize()).string).pbxproj
+        projects[reference] = pbxproj
+        return pbxproj
+    }
 
     // MARK: - Dependency loop
 

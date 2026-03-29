@@ -160,6 +160,129 @@ extension PBXProjGenerator {
         return buildPhases
     }
 
+    // MARK: - Target generation
+
+    func generateTarget(_ target: Target) throws {
+        let carthageDependencies = carthageResolver.dependencies(for: target)
+        let infoPlistFiles: [Config: String] = getInfoPlists(for: target)
+        let sourceFileBuildPhaseOverrides = Dictionary(
+            uniqueKeysWithValues: Set(infoPlistFiles.values).map { (project.basePath + $0, BuildPhaseSpec.none) }
+        )
+        let sourceFiles = try sourceGenerator.getAllSourceFiles(
+            targetType: target.type, sources: target.sources, buildPhases: sourceFileBuildPhaseOverrides
+        ).sorted { $0.path.lastComponent < $1.path.lastComponent }
+
+        let targetDependencies = (target.transitivelyLinkDependencies ?? project.options.transitivelyLinkDependencies)
+            ? getAllDependenciesPlusTransitiveNeedingEmbedding(target: target) : target.dependencies
+        let targetSupportsDirectEmbed = !(target.platform.requiresSimulatorStripping &&
+            (target.type.isApp || target.type == .watch2Extension))
+        let directlyEmbedCarthage = target.directlyEmbedCarthageDependencies ?? targetSupportsDirectEmbed
+
+        var ctx = TargetGenerationContext()
+
+        try processDependencies(
+            for: target,
+            targetDependencies: targetDependencies,
+            carthageDependencies: carthageDependencies,
+            directlyEmbedCarthage: directlyEmbedCarthage,
+            ctx: &ctx
+        )
+
+        ctx.dependencies.append(contentsOf: makePackagePluginDependency(for: target))
+
+        let buildPhases = try assembleBuildPhases(for: target, sourceFiles: sourceFiles, ctx: &ctx)
+
+        let buildRules = target.buildRules.map { buildRule in
+            addObject(PBXBuildRule(
+                compilerSpec: buildRule.action.compilerSpec,
+                fileType: buildRule.fileType.fileType,
+                isEditable: true,
+                filePatterns: buildRule.fileType.pattern,
+                name: buildRule.name ?? "Build Rule",
+                outputFiles: buildRule.outputFiles,
+                outputFilesCompilerFlags: buildRule.outputFilesCompilerFlags,
+                script: buildRule.action.script,
+                runOncePerArchitecture: buildRule.runOncePerArchitecture
+            ))
+        }
+
+        let configs = buildTargetConfigs(
+            for: target,
+            sourceFiles: sourceFiles,
+            infoPlistFiles: infoPlistFiles,
+            carthageDependencies: carthageDependencies,
+            ctx: ctx
+        )
+
+        let defaultConfigurationName = project.options.defaultConfig ?? project.configs.first?.name ?? ""
+        let buildConfigList = addObject(XCConfigurationList(
+            buildConfigurations: configs,
+            defaultConfigurationName: defaultConfigurationName
+        ))
+
+        let targetObject = targetObjects[target.name]!
+        let targetFileReference = targetFileReferences[target.name]
+
+        targetObject.name = target.name
+        targetObject.buildConfigurationList = buildConfigList
+        targetObject.buildPhases = buildPhases
+        targetObject.dependencies = ctx.dependencies
+        targetObject.productName = target.name
+        targetObject.buildRules = buildRules
+        targetObject.packageProductDependencies = ctx.packageDependencies
+        targetObject.product = targetFileReference
+        if !target.isLegacy {
+            targetObject.productType = target.type
+        }
+
+        let synchronizedRootGroups: [PBXFileSystemSynchronizedRootGroup] = sourceFiles.compactMap { sourceFile in
+            guard let syncedGroup = sourceFile.fileReference as? PBXFileSystemSynchronizedRootGroup else { return nil }
+            configureMembershipExceptions(
+                for: syncedGroup, path: sourceFile.path, target: target,
+                targetObject: targetObject, infoPlistFiles: infoPlistFiles
+            )
+            return syncedGroup
+        }
+        if !synchronizedRootGroups.isEmpty {
+            targetObject.fileSystemSynchronizedGroups = synchronizedRootGroups
+        }
+    }
+
+    func generateAggregateTarget(_ target: AggregateTarget) throws {
+        let aggregateTarget = targetAggregateObjects[target.name]!
+
+        let configs: [XCBuildConfiguration] = project.configs.map { config in
+            let buildSettings = project.getBuildSettings(settings: target.settings, config: config)
+            var baseConfiguration: PBXFileReference?
+            if let configPath = target.configFiles[config.name] {
+                baseConfiguration = sourceGenerator.getContainedFileReference(path: project.basePath + configPath) as? PBXFileReference
+            }
+            return addObject(XCBuildConfiguration(
+                name: config.name,
+                baseConfiguration: baseConfiguration,
+                buildSettings: buildSettings
+            ))
+        }
+
+        var dependencies = target.targets.map { generateTargetDependency(from: target.name, to: $0, platform: nil, platforms: nil) }
+
+        let defaultConfigurationName = project.options.defaultConfig ?? project.configs.first?.name ?? ""
+        let buildConfigList = addObject(XCConfigurationList(
+            buildConfigurations: configs,
+            defaultConfigurationName: defaultConfigurationName
+        ))
+
+        var buildPhases: [PBXBuildPhase] = []
+        buildPhases += try target.buildScripts.map { try generateBuildScript(targetName: target.name, buildScript: $0) }
+
+        let packagePluginDependencies = makePackagePluginDependency(for: target)
+        dependencies.append(contentsOf: packagePluginDependencies)
+
+        aggregateTarget.buildPhases = buildPhases
+        aggregateTarget.buildConfigurationList = buildConfigList
+        aggregateTarget.dependencies = dependencies
+    }
+
     // MARK: - Build configurations
 
     func buildTargetConfigs(
