@@ -44,17 +44,6 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "XcodeGenKitTests"
-               BuildableName = "XcodeGenKitTests"
-               BlueprintName = "XcodeGenKitTests"
-               ReferencedContainer = "container:../../..">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "339863E54E2D955C00B56802"
                BuildableName = "Tests.xctest"
                BlueprintName = "Tests"
