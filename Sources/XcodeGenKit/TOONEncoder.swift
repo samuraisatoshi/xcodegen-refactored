@@ -21,7 +21,6 @@ public struct TOONEncoder {
     // MARK: - Core encoding
 
     private func encodeObject(_ dict: [String: Any], indent: Int) -> String {
-        let pad = String(repeating: " ", count: indent)
         var lines: [String] = []
 
         for key in dict.keys.sorted() {

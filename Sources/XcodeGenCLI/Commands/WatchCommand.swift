@@ -45,6 +45,7 @@ class WatchCommand: ProjectCommand {
         info("👁  Watching \(specPaths.map(\.lastComponent).joined(separator: ", ")) — Ctrl+C to stop")
         regenerate(specPaths: specPaths)
 
+#if canImport(Darwin)
         // Set up one watcher per spec file
         var sources: [DispatchSourceFileSystemObject] = []
         var debounceItem: DispatchWorkItem?
@@ -81,6 +82,9 @@ class WatchCommand: ProjectCommand {
         sigint.resume()
 
         dispatchMain()
+#else
+        throw WatchUnsupportedError()
+#endif
     }
 
     private func regenerate(specPaths: [Path]) {
@@ -148,4 +152,9 @@ class WatchCommand: ProjectCommand {
 
     // Not used — execute() is fully overridden
     override func execute(specLoader: SpecLoader, projectSpecPath: Path, project: Project) throws {}
+}
+
+private struct WatchUnsupportedError: ProcessError {
+    var message: String? { "watch is only supported on macOS" }
+    var exitStatus: Int32 { 1 }
 }
