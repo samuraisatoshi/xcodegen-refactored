@@ -73,7 +73,26 @@ class ValidateCommand: ProjectCommand {
         }
 
         let result = ValidationResult(valid: allErrors.isEmpty, errors: allErrors, warnings: allWarnings)
-        stdout.print(try result.jsonString())
+
+        switch outputFormat {
+        case .plain:
+            stdout.print(try result.jsonString())
+        case .llm:
+            let dict: [String: Any] = [
+                "valid": result.valid,
+                "errors": result.errors.map { ["stage": $0.stage, "message": $0.message] as [String: Any] },
+                "warnings": result.warnings.map { ["stage": $0.stage, "message": $0.message] as [String: Any] }
+            ]
+            stdout.print(TOONEncoder().encode(dict))
+        case .enriched:
+            let icon: RichFormatter.Icon = result.valid ? .ok : .error
+            let title = result.valid ? "Spec is valid" : "Spec has \(result.errors.count) error(s)"
+            var rows: [(label: String, value: String)] = []
+            if !result.warnings.isEmpty { rows.append(("Warnings", "\(result.warnings.count)")) }
+            let messages = result.errors.map { "\($0.stage): \($0.message)" }
+                + result.warnings.map { "\($0.stage): \($0.message)" }
+            stdout.print(RichFormatter.box(title: title, icon: icon, rows: rows, warnings: messages))
+        }
 
         if !result.valid {
             throw ValidationFailed()

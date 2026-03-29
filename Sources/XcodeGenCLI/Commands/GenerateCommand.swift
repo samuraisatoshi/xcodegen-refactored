@@ -135,7 +135,24 @@ class GenerateCommand: ProjectCommand {
         do {
             try fileWriter.writeXcodeProject(xcodeProject, to: projectPath)
 
-            success("Created project at \(projectPath)")
+            switch outputFormat {
+            case .plain:
+                success("Created project at \(projectPath)")
+            case .llm:
+                let dict: [String: Any] = [
+                    "status": "ok",
+                    "project": projectPath.string,
+                    "targets": project.targets.map { $0.name }
+                ]
+                stdout.print(TOONEncoder().encode(dict))
+            case .enriched:
+                let names = project.targets.map { $0.name }.joined(separator: " · ")
+                stdout.print(RichFormatter.box(
+                    title: projectPath.lastComponent,
+                    icon: .ok,
+                    rows: [("Targets", names)]
+                ))
+            }
         } catch {
             throw GenerationError.writingError(error)
         }

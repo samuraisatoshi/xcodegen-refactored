@@ -81,10 +81,25 @@ class InferCommand: ProjectCommand {
 
         try destination.write(yamlString)
 
-        let warnSuffix = warnings.isEmpty ? "" : "\n\(warnings.count) warning(s):"
-        success("Inferred \(destination.lastComponent) from \(projPath.lastComponent)\(warnSuffix)")
-        for w in warnings {
-            warning(w)
+        switch outputFormat {
+        case .plain:
+            let warnSuffix = warnings.isEmpty ? "" : "\n\(warnings.count) warning(s):"
+            success("Inferred \(destination.lastComponent) from \(projPath.lastComponent)\(warnSuffix)")
+            for w in warnings { warning(w) }
+        case .llm:
+            let dict: [String: Any] = [
+                "status": "ok",
+                "spec": destination.string,
+                "warnings": warnings
+            ]
+            stdout.print(TOONEncoder().encode(dict))
+        case .enriched:
+            stdout.print(RichFormatter.box(
+                title: destination.lastComponent,
+                icon: .ok,
+                rows: [("Source", projPath.lastComponent)],
+                warnings: warnings
+            ))
         }
     }
 

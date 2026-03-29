@@ -30,6 +30,20 @@ class ProjectCommand: Command {
     @Key("--lang", description: "Language for --guide output. One of: en, pt-br, es. Defaults to the LANG environment variable.")
     var lang: String?
 
+    @Flag("--llm-output", description: "Output in TOON format (Token-Optimized Object Notation) for LLM/agent consumption.")
+    var llmOutput: Bool
+
+    @Flag("--enriched-output", description: "Output in rich terminal format with box-drawing chars, icons and tables.")
+    var enrichedOutput: Bool
+
+    enum OutputFormat { case plain, llm, enriched }
+
+    var outputFormat: OutputFormat {
+        if llmOutput { return .llm }
+        if enrichedOutput { return .enriched }
+        return .plain
+    }
+
     /// Override in subclasses to provide command-specific guide content.
     func guideContent(locale: GuideLocale) -> CommandGuide {
         CommandGuide(

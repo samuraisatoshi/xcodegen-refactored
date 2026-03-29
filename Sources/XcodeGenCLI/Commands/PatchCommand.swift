@@ -119,7 +119,27 @@ class PatchCommand: ProjectCommand {
 
         let xcodeProject = try projectGenerator.generateXcodeProject(in: projectDirectory, userName: userName)
         try fileWriter.writeXcodeProject(xcodeProject, to: projectPath)
-        success("Created project at \(projectPath)")
+
+        switch outputFormat {
+        case .plain:
+            success("Created project at \(projectPath)")
+        case .llm:
+            let dict: [String: Any] = [
+                "status": "ok",
+                "spec": projectSpecPath.string,
+                "project": projectPath.string
+            ]
+            stdout.print(TOONEncoder().encode(dict))
+        case .enriched:
+            stdout.print(RichFormatter.box(
+                title: projectPath.lastComponent,
+                icon: .ok,
+                rows: [
+                    ("Spec", projectSpecPath.lastComponent),
+                    ("Operation", operation.rawValue)
+                ]
+            ))
+        }
     }
 
 }
