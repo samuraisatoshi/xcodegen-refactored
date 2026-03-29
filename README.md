@@ -4,8 +4,14 @@
 </a>
 </p>
 <p align="center">
+  <a href="https://github.com/samuraisatoshi/xcodegen-refactored/actions/workflows/ci.yml">
+    <img src="https://github.com/samuraisatoshi/xcodegen-refactored/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://github.com/samuraisatoshi/xcodegen-refactored/releases/tag/v0.1.0">
+    <img src="https://img.shields.io/badge/release-v0.1.0-blue.svg" alt="Release v0.1.0" />
+  </a>
   <a href="https://github.com/yonaskolb/XcodeGen/releases">
-    <img src="https://img.shields.io/github/release/yonaskolb/xcodegen.svg"/>
+    <img src="https://img.shields.io/badge/upstream-v2.45.3-lightgrey.svg" alt="Upstream v2.45.3"/>
   </a>
   <a href="https://swiftpackageindex.com/yonaskolb/XcodeGen">
     <img src="https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2Fyonaskolb%2FXcodeGen%2Fbadge%3Ftype%3Dplatforms" alt="Swift Package Manager Platforms" />
