@@ -34,7 +34,7 @@ This fork applies two layers of improvement on top of upstream **v2.45.3**, with
 
 Internal code quality improvements — no external behaviour change:
 
-- **`PBXProjGenerator.swift`** (1724L → 1308L) decomposed into `+BuildPhases`, `+DependencyHelpers`, `+Helpers` extension files
+- **`PBXProjGenerator.swift`** (1724L → 97L) decomposed into 8 focused extension files: `+BuildPhases`, `+DependencyHelpers`, `+Helpers`, `+ProjectSetup`, `+TargetContext`, `+TargetDependencies`, `+TargetGeneration`, `+TargetHelpers`; `generate()` reduced from 280L to 38L (pure orchestrator)
 - **`SourceGenerator.swift`** (923L → 186L) decomposed into `+FileReferences`, `+Groups`, `+SourceFiles` extension files
 - **`Scheme.swift`** (1095L → 441L) — serialisation extracted to `Scheme+Codable.swift`
 - `CarthageResolving` protocol introduced (Dependency Inversion); `SourceGenerator` IUO removed

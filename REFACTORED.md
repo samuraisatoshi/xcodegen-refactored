@@ -24,14 +24,18 @@ This fork applies two independent layers of improvement on top of the upstream X
 
 ### CD-002 — Decompose PBXProjGenerator
 
-`PBXProjGenerator.swift` (1724 lines) was split into focused extension files:
+`PBXProjGenerator.swift` (1724 lines) was split into 8 focused extension files. The main file is now 97L and `generate()` is 38L — a pure orchestrator:
 
-| File | Responsibility |
-|------|---------------|
-| `PBXProjGenerator.swift` | Orchestrator (1308L) |
-| `PBXProjGenerator+BuildPhases.swift` | Build phase generation |
-| `PBXProjGenerator+DependencyHelpers.swift` | Dependency resolution helpers |
-| `PBXProjGenerator+Helpers.swift` | Attribute and group ordering helpers |
+| File | Responsibility | Lines |
+|------|---------------|-------|
+| `PBXProjGenerator.swift` | Class definition + `generate()` orchestrator | 97L |
+| `PBXProjGenerator+ProjectSetup.swift` | Build configs, target stubs, packages, groups, finalisation | 194L |
+| `PBXProjGenerator+TargetGeneration.swift` | `generateTarget`, `generateAggregateTarget`, build phases, configs | 393L |
+| `PBXProjGenerator+TargetDependencies.swift` | `generateTargetDependency`, external deps, dependency loop | 453L |
+| `PBXProjGenerator+BuildPhases.swift` | Build phase assembly helpers | 80L |
+| `PBXProjGenerator+DependencyHelpers.swift` | Dependency resolution helpers | 159L |
+| `PBXProjGenerator+Helpers.swift` | Attribute and group ordering helpers | 199L |
+| `PBXProjGenerator+TargetHelpers.swift` | Target-level helpers | 103L |
 
 ### CD-003 — CarthageResolving protocol + remove IUO
 

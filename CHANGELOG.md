@@ -23,7 +23,7 @@
 
 ### Changed — SOLID / DDD refactoring (no behaviour change)
 
-- `PBXProjGenerator.swift` 1724L → 1308L; extracted `+BuildPhases`, `+DependencyHelpers`, `+Helpers` extension files
+- `PBXProjGenerator.swift` 1724L → 97L; decomposed into 8 extension files (`+ProjectSetup`, `+TargetGeneration`, `+TargetDependencies`, `+BuildPhases`, `+DependencyHelpers`, `+Helpers`, `+TargetContext`, `+TargetHelpers`); `generate()` reduced from 280L to 38L (pure orchestrator)
 - `SourceGenerator.swift` 923L → 186L; extracted `+FileReferences`, `+Groups`, `+SourceFiles` extension files
 - `Scheme.swift` 1095L → 441L; serialisation extracted to `Scheme+Codable.swift`
 - `PBXProjGenerator.carthageResolver`: concrete type → `CarthageResolving` protocol (DIP)
