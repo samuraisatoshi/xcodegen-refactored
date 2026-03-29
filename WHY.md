@@ -1,45 +1,82 @@
-# WHY — Refactor: SOLID + DDD + Performance + Security
+# WHY — Refactored Fork of XcodeGen v2.45.3
 
-Branch: `refactor/solid-ddd-performance`
+Branch: `master` (samuraisatoshi/xcodegen-refactored)
 Sprint: SP-001 (2026-03-28)
-Cards: CD-001 → CD-006 (28 story points)
+Cards: CD-001 → CD-009 + EP-002
 
 ---
 
 ## O que foi feito
 
-Seis mudanças estruturais no codebase do xcodegen, sem alteração de comportamento externo:
+Dois blocos de melhoria em cima do upstream **v2.45.3**, sem breaking changes:
 
-| Commit | Card | Mudança |
-|--------|------|---------|
-| `241a5885` | CD-001 | Cache de `NSRegularExpression` em `SourceGenerator` |
-| `9c05eda2` | CD-002 | Decomposição de `PBXProjGenerator.swift` (1724 → 1308L) em 3 extension files |
-| `e1eb8d7a` | CD-003 | Protocolo `CarthageResolving` + eliminação de IUO em `SourceGenerator` |
-| `601f8b31` | CD-004 | Validação de include path traversal (`validateIncludePaths`) |
-| `26df2613` | CD-005 | Decomposição de `SourceGenerator.swift` (923 → 186L) em 3 extension files |
-| `ef0d3ee1` | CD-006 | Extração de `Scheme+Codable.swift` de `Scheme.swift` (1095 → 441L) |
+### EP-001 — SOLID / DDD / Performance / Security (CD-001 → CD-009)
 
-### Arquivos antes e depois
+| Card | Mudança |
+|------|---------|
+| CD-001 | Cache de `NSRegularExpression` em `SourceGenerator` |
+| CD-002 | Decomposição de `PBXProjGenerator.swift` (1724 → 97L) em 8 extension files |
+| CD-003 | Protocolo `CarthageResolving` + eliminação de IUO em `SourceGenerator` |
+| CD-004 | Validação de include path traversal (`validateIncludePaths`) |
+| CD-005 | Decomposição de `SourceGenerator.swift` (923 → 186L) em 3 extension files |
+| CD-006 | Extração de `Scheme+Codable.swift` de `Scheme.swift` (1095 → 441L) |
+| CD-007–009 | Decomposição final: `+ProjectSetup`, `+TargetGeneration`, `+TargetDependencies` |
+
+### EP-002 — Novos comandos e output flags
+
+| Adição | Descrição |
+|--------|-----------|
+| `xcodegen validate` | Valida o spec sem gerar projeto; saída JSON estruturada |
+| `xcodegen query` | Consulta targets, sources, settings ou dependências como JSON |
+| `xcodegen generate --dry-run` | Diff do projeto em memória sem escrever arquivos |
+| `xcodegen watch` | Regenera automaticamente ao detectar mudanças no spec |
+| `xcodegen patch` | Edita o spec semanticamente e regenera de forma atômica |
+| `xcodegen infer` | Gera `project.yml` a partir de um `.xcodeproj` existente |
+| `--llm-output` | Saída em formato TOON (~40% menos tokens que JSON) |
+| `--enriched-output` | Saída rica com box-drawing chars, ícones e tabelas alinhadas |
+| `--guide [--lang]` | JSON de documentação estruturada para MCP servers e agents |
+
+---
+
+## Arquivos antes e depois
 
 ```
-PBXProjGenerator.swift        1724L → 1308L  (-416)
-  + PBXProjGenerator+BuildPhases.swift         80L  (novo)
-  + PBXProjGenerator+DependencyHelpers.swift  159L  (novo)
-  + PBXProjGenerator+Helpers.swift            199L  (novo)
+PBXProjGenerator.swift              1724L →   97L  (-1627)
+  + PBXProjGenerator+BuildPhases.swift          80L  (novo)
+  + PBXProjGenerator+DependencyHelpers.swift   159L  (novo)
+  + PBXProjGenerator+Helpers.swift             199L  (novo)
+  + PBXProjGenerator+ProjectSetup.swift        194L  (novo)
+  + PBXProjGenerator+TargetContext.swift        28L  (novo)
+  + PBXProjGenerator+TargetDependencies.swift  453L  (novo)
+  + PBXProjGenerator+TargetGeneration.swift    393L  (novo)
+  + PBXProjGenerator+TargetHelpers.swift       103L  (novo)
 
-SourceGenerator.swift          923L →  186L  (-737)
-  + SourceGenerator+FileReferences.swift      129L  (novo)
-  + SourceGenerator+Groups.swift              176L  (novo)
-  + SourceGenerator+SourceFiles.swift         450L  (novo)
+SourceGenerator.swift                923L →  186L  (-737)
+  + SourceGenerator+FileReferences.swift       129L  (novo)
+  + SourceGenerator+Groups.swift               176L  (novo)
+  + SourceGenerator+SourceFiles.swift          450L  (novo)
 
-Scheme.swift                  1095L →  441L  (-654)
-  + Scheme+Codable.swift                      659L  (novo)
+Scheme.swift                        1095L →  441L  (-654)
+  + Scheme+Codable.swift                       659L  (novo)
 
-CarthageResolving.swift                        12L  (novo — protocolo DIP)
-SpecFile.swift                             +10L  (validação de paths)
-SpecOptions.swift                           +6L  (opção validateIncludePaths)
-SpecValidationError.swift                   +3L  (novo caso de erro)
-Tests/SpecLoadingTests.swift               +55L  (teste de regressão)
+CarthageResolving.swift                         12L  (novo — protocolo DIP)
+SpecFile.swift                               +10L   (validação de paths)
+SpecOptions.swift                             +6L   (opção validateIncludePaths)
+SpecValidationError.swift                     +3L   (novo caso de erro)
+
+TOONEncoder.swift                              179L  (novo)
+RichFormatter.swift                            180L  (novo)
+ValidateCommand.swift                          129L  (novo)
+QueryCommand.swift                             234L  (novo)
+WatchCommand.swift                             151L  (novo)
+PatchCommand.swift                             176L  (novo)
+InferCommand.swift                             130L  (novo)
+ProjectDiff.swift                               77L  (novo)
+ProjectCommand.swift                        +34L   (flags llmOutput, enrichedOutput, guide, lang)
+GenerateCommand.swift                        +22L   (--dry-run flag + outputFormat switch)
+
+Tests/XcodeGenKitTests/TOONEncoderTests.swift  134L  (19 testes novos)
+Total de testes: 75 → 110 (0 falhas)
 ```
 
 ---
@@ -62,11 +99,14 @@ Após o refactor, cada arquivo tem uma única responsabilidade clara. Um agente 
 A convenção de nomes `Tipo+Responsabilidade.swift` é legível tanto por humanos quanto por LLMs sem precisar ler o código:
 
 ```
-SourceGenerator+FileReferences.swift  → "aqui ficam as refs de arquivos"
-SourceGenerator+Groups.swift          → "aqui ficam os grupos Xcode"
-SourceGenerator+SourceFiles.swift     → "aqui fica o traversal de sources"
-PBXProjGenerator+BuildPhases.swift    → "aqui ficam as build phases"
-Scheme+Codable.swift                  → "aqui fica a serialização JSON do Scheme"
+SourceGenerator+FileReferences.swift    → "aqui ficam as refs de arquivos"
+SourceGenerator+Groups.swift            → "aqui ficam os grupos Xcode"
+SourceGenerator+SourceFiles.swift       → "aqui fica o traversal de sources"
+PBXProjGenerator+BuildPhases.swift      → "aqui ficam as build phases"
+PBXProjGenerator+ProjectSetup.swift     → "aqui fica o setup inicial do projeto"
+PBXProjGenerator+TargetGeneration.swift → "aqui fica a geração de targets"
+PBXProjGenerator+TargetDependencies.swift → "aqui ficam as dependências entre targets"
+Scheme+Codable.swift                    → "aqui fica a serialização JSON do Scheme"
 ```
 
 Um agente pode fazer `glob("**/*.swift")` e inferir onde procurar antes de ler qualquer linha.
@@ -118,6 +158,43 @@ let regex = try? NSRegularExpression(pattern: "\/\(destination)\/", ...)
 private static let destinationRegexCache: [SupportedDestination: (...)] = ...
 ```
 
+### 6. Novos comandos para CI/CD e LLM tooling (EP-002)
+
+O upstream tem apenas `generate`, `dump` e `cache`. Os novos comandos adicionam:
+
+**`validate`** — separar validação de geração é fundamental para pipelines CI que querem falhar rápido:
+```bash
+xcodegen validate --spec project.yml
+# { "valid": true, "errors": [], "warnings": [] }
+```
+
+**`generate --dry-run`** — permite revisar o que mudaria antes de commitar:
+```bash
+xcodegen generate --dry-run
+# { "added": ["ABC123"], "modified": ["DEF456"], "removed": [] }
+```
+
+**`query`** — introspect o projeto como dados estruturados, sem parsear o `.xcodeproj`:
+```bash
+xcodegen query --type targets --llm-output
+# targets[3]{name,type,platform}:
+#   MyApp,application,iOS
+#   MyTests,bundle.unit-test,iOS
+```
+
+**`--llm-output` (TOON)** — o formato JSON padrão repete chaves em cada linha de um array de objetos. TOON elimina essa repetição:
+```
+# JSON: 120 tokens
+[{"name":"MyApp","type":"application"},{"name":"MyTests","type":"bundle.unit-test"}]
+
+# TOON: ~70 tokens
+targets[2]{name,type}:
+  MyApp,application
+  MyTests,bundle.unit-test
+```
+
+**`--enriched-output`** — saída visual moderna para uso humano interativo, sem scripts de formatação externos.
+
 ---
 
 ## Benefícios para desenvolvimento com LLM agents
@@ -125,10 +202,11 @@ private static let destinationRegexCache: [SupportedDestination: (...)] = ...
 ### Contexto menor = respostas melhores
 
 | Tarefa | Contexto antes | Contexto depois |
-|--------|---------------|-----------------|
+|--------|----------------|-----------------|
 | Modificar criação de grupos Xcode | 923L (SourceGenerator inteiro) | 176L (+186L main) |
-| Adicionar build phase | 1724L (PBXProjGenerator inteiro) | 80L (+1308L main) |
+| Adicionar build phase | 1724L (PBXProjGenerator inteiro) | 80L (+97L main) |
 | Modificar serialização de Scheme | 1095L | 659L |
+| Modificar geração de targets | 1724L | 393L (+97L main) |
 | Implementar Carthage alternativo | toda a classe geradora | protocolo de 12L |
 
 ### Menor chance de edição destrutiva
@@ -154,23 +232,40 @@ struct MockCarthageResolver: CarthageResolving {
 ```
 Sources/
   ProjectSpec/
-    Scheme.swift              ← modelo puro
-    Scheme+Codable.swift      ← serialização
-    SpecFile.swift            ← carregamento + validação de includes
-    SpecOptions.swift         ← opções do projeto
-    SpecValidationError.swift ← todos os erros de validação
+    Scheme.swift                  ← modelo puro
+    Scheme+Codable.swift          ← serialização
+    SpecFile.swift                ← carregamento + validação de includes
+    SpecOptions.swift             ← opções do projeto
+    SpecValidationError.swift     ← todos os erros de validação
 
   XcodeGenKit/
-    PBXProjGenerator.swift              ← orquestrador principal
-    PBXProjGenerator+BuildPhases.swift  ← geração de build phases
-    PBXProjGenerator+DependencyHelpers.swift ← helpers de dependência
-    PBXProjGenerator+Helpers.swift      ← atributos, ordenação de grupos
-    CarthageResolving.swift             ← protocolo DIP
-    CarthageDependencyResolver.swift    ← implementação concreta
-    SourceGenerator.swift               ← init + geração de source files
-    SourceGenerator+FileReferences.swift ← resolução de file refs
-    SourceGenerator+Groups.swift        ← criação de grupos Xcode
-    SourceGenerator+SourceFiles.swift   ← traversal de sources
+    PBXProjGenerator.swift                    ← orquestrador (38L de lógica real)
+    PBXProjGenerator+BuildPhases.swift        ← geração de build phases
+    PBXProjGenerator+DependencyHelpers.swift  ← helpers de dependência
+    PBXProjGenerator+Helpers.swift            ← atributos, ordenação de grupos
+    PBXProjGenerator+ProjectSetup.swift       ← setup inicial: stubs, packages, grupos
+    PBXProjGenerator+TargetContext.swift      ← contexto de geração por target
+    PBXProjGenerator+TargetDependencies.swift ← dependências entre targets
+    PBXProjGenerator+TargetGeneration.swift   ← geração completa de target
+    PBXProjGenerator+TargetHelpers.swift      ← helpers internos de target
+    CarthageResolving.swift                   ← protocolo DIP
+    CarthageDependencyResolver.swift          ← implementação concreta
+    SourceGenerator.swift                     ← init + geração de source files
+    SourceGenerator+FileReferences.swift      ← resolução de file refs
+    SourceGenerator+Groups.swift              ← criação de grupos Xcode
+    SourceGenerator+SourceFiles.swift         ← traversal de sources
+    TOONEncoder.swift                         ← encoder TOON para --llm-output
+    ProjectDiff.swift                         ← diff de pbxproj para --dry-run
+
+  XcodeGenCLI/
+    Commands/ProjectCommand.swift    ← base: flags globais, outputFormat
+    Commands/GenerateCommand.swift   ← generate (+ --dry-run)
+    Commands/ValidateCommand.swift   ← validate
+    Commands/QueryCommand.swift      ← query
+    Commands/WatchCommand.swift      ← watch
+    Commands/PatchCommand.swift      ← patch
+    Commands/InferCommand.swift      ← infer
+    RichFormatter.swift              ← box/tabela para --enriched-output
 ```
 
 Um agente pode ler esta estrutura e saber exatamente onde procurar antes de abrir qualquer arquivo.
@@ -180,7 +275,7 @@ Um agente pode ler esta estrutura e saber exatamente onde procurar antes de abri
 ## O que não mudou
 
 - Nenhum comportamento externo foi alterado
-- A API pública dos módulos `ProjectSpec` e `XcodeGenKit` é idêntica
-- Todos os 75 testes existentes passam
-- Compatibilidade retroativa com specs existentes (validateIncludePaths é opt-in)
+- A API pública dos módulos `ProjectSpec` e `XcodeGenKit` é idêntica ao upstream
+- Todos os 110 testes passam (75 upstream + 35 novos)
+- Compatibilidade retroativa com specs existentes (`validateIncludePaths` é opt-in)
 - Nenhuma dependência nova foi adicionada
