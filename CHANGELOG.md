@@ -1,5 +1,52 @@
 # Change Log
 
+<!-- ------------------------------------------------------------------ -->
+<!-- FORK CHANGES — samuraisatoshi/xcodegen-refactored (base: 2.45.3)   -->
+<!-- ------------------------------------------------------------------ -->
+
+## [Fork] 2.45.3+refactored — 2026-03-28
+
+### Added — New CLI commands
+
+- **`xcodegen validate`** — validate the spec without generating; structured JSON output with `valid`, `errors` (stage: `parsing|validation`), `warnings`; exits 1 on errors
+- **`xcodegen query`** — query the resolved spec; `--type targets|target|sources|settings|dependencies`; `--name` for per-target; `--config` for settings
+- **`xcodegen generate --dry-run`** — generate in memory, diff against existing project (UUID-stable), emit JSON without writing files
+- **`xcodegen watch`** — auto-regenerate on spec or included-file changes
+- **`xcodegen patch`** — semantic spec editing with atomic regeneration; operations: `add-source`, `add-dependency`, `set-setting`; `--dry-run` prints YAML only
+- **`xcodegen infer`** — reverse-engineer a `project.yml` from an existing `.xcodeproj`
+
+### Added — New global output flags (all commands)
+
+- **`--llm-output`** — TOON (Token-Optimized Object Notation) format for LLM/agent consumption; ~40% fewer tokens than JSON for tabular data
+- **`--enriched-output`** — rich terminal output with box-drawing chars, Unicode status icons (✓ ✗ ⚠ ○) and auto-sized tables
+- **`--guide [--lang en|pt-br|es]`** — structured JSON command documentation for LLM agents and MCP servers
+
+### Changed — SOLID / DDD refactoring (no behaviour change)
+
+- `PBXProjGenerator.swift` 1724L → 1308L; extracted `+BuildPhases`, `+DependencyHelpers`, `+Helpers` extension files
+- `SourceGenerator.swift` 923L → 186L; extracted `+FileReferences`, `+Groups`, `+SourceFiles` extension files
+- `Scheme.swift` 1095L → 441L; serialisation extracted to `Scheme+Codable.swift`
+- `PBXProjGenerator.carthageResolver`: concrete type → `CarthageResolving` protocol (DIP)
+- `SourceGenerator.sourceGenerator`: IUO `!` removed, replaced with `let`
+- `generateTarget`: long parameter list replaced with `TargetGenerationContext`
+- `SpecValidation.swift`: decomposed into domain-specific validation files
+
+### Changed — Performance
+
+- `SourceGenerator.makeDestinationFilters`: `NSRegularExpression` compiled once per process (static cache) instead of on every call
+
+### Fixed — Security
+
+- **Include path traversal** (`CD-004`): `SpecFile` validates include paths stay within project directory when `options.validateIncludePaths: true`; backwards-compatible opt-in (default `false`)
+
+### Tests
+
+Added 49 new tests across 5 new test suites; total suite: **110 tests, 0 failures**
+
+<!-- ------------------------------------------------------------------ -->
+<!-- UPSTREAM CHANGELOG                                                  -->
+<!-- ------------------------------------------------------------------ -->
+
 ## Next Version
 
 ## 2.45.3
